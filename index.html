@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Carrinho Acessível</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    :root {
+      --azul: #003366;
+      --azul-claro: #007acc;
+      --verde: #2e8b57;
+      --fundo: #f4f4f4;
+      --branco: #ffffff;
+      --fonte: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+      font-family: var(--fonte);
+      background-color: var(--fundo);
+      color: var(--azul);
+      padding: 2rem;
+      max-width: 900px;
+      margin: auto;
+    }
+
+    h1, h2 {
+      color: var(--azul);
+    }
+
+    .produto {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background-color: var(--branco);
+      padding: 1rem;
+      margin: 1rem 0;
+      border-radius: 6px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .btn {
+      background-color: var(--azul-claro);
+      border: none;
+      color: var(--branco);
+      padding: 0.5rem 1rem;
+      font-size: 1rem;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .btn:hover, .btn:focus {
+      background-color: var(--azul);
+      outline: 2px solid var(--verde);
+    }
+
+    .btn-remove {
+      background-color: crimson;
+      margin-left: 0.5rem;
+    }
+
+    .carrinho {
+      background-color: var(--branco);
+      padding: 1rem;
+      margin-top: 2rem;
+      border-left: 4px solid var(--azul-claro);
+      border-radius: 4px;
+    }
+
+    .item-carrinho {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.5rem;
+    }
+
+    #status {
+      margin-top: 1rem;
+      font-weight: bold;
+      color: #005a9e;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Loja Acessível</h1>
+  <p>Use os botões para adicionar ou remover produtos do seu carrinho. O status da ação será anunciado automaticamente.</p>
+
+  <section aria-label="Lista de produtos">
+    <div class="produto">
+      <span>Camisa Esportiva</span>
+      <button class="btn" aria-label="Adicionar Camisa Esportiva ao carrinho" onclick="adicionar('Camisa Esportiva')">🛒 Adicionar</button>
+    </div>
+
+    <div class="produto">
+      <span>Boné Bordado</span>
+      <button class="btn" aria-label="Adicionar Boné Bordado ao carrinho" onclick="adicionar('Boné Bordado')">🛒 Adicionar</button>
+    </div>
+
+    <div class="produto">
+      <span>Garrafa Térmica</span>
+      <button class="btn" aria-label="Adicionar Garrafa Térmica ao carrinho" onclick="adicionar('Garrafa Térmica')">🛒 Adicionar</button>
+    </div>
+  </section>
+
+  <section class="carrinho" aria-label="Resumo do carrinho">
+    <h2>Carrinho de Compras</h2>
+    <div id="itensCarrinho" aria-live="polite">
+      Nenhum item no carrinho.
+    </div>
+    <div id="status" aria-live="polite"></div>
+  </section>
+
+  <script>
+    const carrinho = {};
+
+    function atualizarCarrinho() {
+      const container = document.getElementById("itensCarrinho");
+      const status = document.getElementById("status");
+      container.innerHTML = "";
+
+      const nomes = Object.keys(carrinho);
+      if (nomes.length === 0) {
+        container.textContent = "Nenhum item no carrinho.";
+        return;
+      }
+
+      nomes.forEach((produto) => {
+        const item = document.createElement("div");
+        item.className = "item-carrinho";
+        item.innerHTML = `
+          <span>${produto} (${carrinho[produto]})</span>
+          <span>
+            <button class="btn btn-remove" aria-label="Remover ${produto} do carrinho" onclick="remover('${produto}')">Remover</button>
+          </span>
+        `;
+        container.appendChild(item);
+      });
+    }
+
+    function adicionar(produto) {
+      carrinho[produto] = (carrinho[produto] || 0) + 1;
+      atualizarCarrinho();
+      const status = document.getElementById("status");
+      status.textContent = `${produto} adicionado ao carrinho.`;
+    }
+
+    function remover(produto) {
+          if (carrinho[produto]) {
+            carrinho[produto]--;
+            if (carrinho[produto] === 0) delete carrinho[produto];
+            
+            atualizarCarrinho(); 
+            
+            const status = document.getElementById("status");
+            status.textContent = `${produto} removido do carrinho.`;
+
+        
+            const carrinhoTitle = document.querySelector('.carrinho h2');
+            carrinhoTitle.setAttribute('tabindex', '-1'); 
+            carrinhoTitle.focus();
+            // -------------------------
+  }
+}
+  </script>
+
+</body>
+</html>
