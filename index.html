@@ -13,7 +13,6 @@
       --branco: #ffffff;
       --fonte: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     }
-
     body {
       font-family: var(--fonte);
       background-color: var(--fundo);
@@ -22,11 +21,8 @@
       max-width: 900px;
       margin: auto;
     }
-
-    h1, h2 {
-      color: var(--azul);
-    }
-
+    h1, h2 { color: var(--azul); }
+    h2:focus { outline: none; }
     .produto {
       display: flex;
       justify-content: space-between;
@@ -38,6 +34,25 @@
       box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
 
+    .produto-info, .item-carrinho-info {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+    .produto-imagem {
+        width: 60px;
+        height: 60px;
+        object-fit: cover;
+        border-radius: 4px;
+        flex-shrink: 0; 
+    }
+    .item-carrinho-imagem {
+        width: 40px;
+        height: 40px;
+        object-fit: cover;
+        border-radius: 4px;
+        flex-shrink: 0;
+    }
     .btn {
       background-color: var(--azul-claro);
       border: none;
@@ -47,17 +62,12 @@
       border-radius: 4px;
       cursor: pointer;
     }
-
     .btn:hover, .btn:focus {
       background-color: var(--azul);
-      outline: 2px solid var(--verde);
+      outline: 3px solid var(--verde);
+      outline-offset: 2px;
     }
-
-    .btn-remove {
-      background-color: crimson;
-      margin-left: 0.5rem;
-    }
-
+    .btn-remove { background-color: crimson; margin-left: 0.5rem; }
     .carrinho {
       background-color: var(--branco);
       padding: 1rem;
@@ -65,18 +75,33 @@
       border-left: 4px solid var(--azul-claro);
       border-radius: 4px;
     }
-
+    .lista-carrinho { list-style-type: none; padding: 0; margin: 0; }
     .item-carrinho {
       display: flex;
       justify-content: space-between;
       align-items: center;
       margin-bottom: 0.5rem;
+      padding: 0.5rem 0;
+      border-bottom: 1px solid #eee;
     }
-
-    #status {
-      margin-top: 1rem;
-      font-weight: bold;
-      color: #005a9e;
+    .item-carrinho:last-child { border-bottom: none; }
+    #status { margin-top: 1rem; font-weight: bold; color: #005a9e; }
+    .titulo-expansivel {
+      background: none; border: none; padding: 0; font-family: inherit;
+      font-size: inherit; text-align: left; color: var(--azul);
+      width: 100%; cursor: pointer; display: flex;
+      justify-content: space-between; align-items: center;
+    }
+    .titulo-expansivel:focus { outline: 3px solid var(--verde); outline-offset: 4px; }
+    .icone-expansivel {
+      display: inline-block; width: 0; height: 0;
+      border-left: 6px solid transparent;
+      border-right: 6px solid transparent;
+      border-top: 8px solid currentColor;
+      transition: transform 0.2s ease-in-out;
+    }
+    .titulo-expansivel[aria-expanded="true"] .icone-expansivel {
+      transform: rotate(180deg);
     }
   </style>
 </head>
@@ -85,82 +110,128 @@
   <h1>Loja Acessível</h1>
   <p>Use os botões para adicionar ou remover produtos do seu carrinho. O status da ação será anunciado automaticamente.</p>
 
-  <section aria-label="Lista de produtos">
-    <div class="produto">
-      <span>Camisa Esportiva</span>
-      <button class="btn" aria-label="Adicionar Camisa Esportiva ao carrinho" onclick="adicionar('Camisa Esportiva')">🛒 Adicionar</button>
-    </div>
-
-    <div class="produto">
-      <span>Boné Bordado</span>
-      <button class="btn" aria-label="Adicionar Boné Bordado ao carrinho" onclick="adicionar('Boné Bordado')">🛒 Adicionar</button>
-    </div>
-
-    <div class="produto">
-      <span>Garrafa Térmica</span>
-      <button class="btn" aria-label="Adicionar Garrafa Térmica ao carrinho" onclick="adicionar('Garrafa Térmica')">🛒 Adicionar</button>
-    </div>
-  </section>
+  <section id="lista-produtos" aria-label="Lista de produtos">
+    </section>
 
   <section class="carrinho" aria-label="Resumo do carrinho">
-    <h2>Carrinho de Compras</h2>
-    <div id="itensCarrinho" aria-live="polite">
-      Nenhum item no carrinho.
+    <button class="titulo-expansivel" onclick="toggleCarrinho(this)" aria-expanded="true" aria-controls="painelCarrinho">
+      <h2>Carrinho de Compras</h2>
+      <span class="icone-expansivel" aria-hidden="true"></span>
+    </button>
+    
+    <div id="painelCarrinho">
+      <ul id="itensCarrinho" class="lista-carrinho" aria-live="polite">
+        <li>Nenhum item no carrinho.</li>
+      </ul>
+      <div id="status" aria-live="polite"></div>
     </div>
-    <div id="status" aria-live="polite"></div>
   </section>
 
   <script>
+
+    const produtos = [
+      {
+        id: 'camisa',
+        nome: 'Camisa Esportiva',
+        imgSrc: 'imagens/camisa.png',
+        altText: 'Camisa esportiva azul de manga curta com gola redonda.'
+      },
+      {
+        id: 'bone',
+        nome: 'Boné Bordado',
+        imgSrc: 'imagens/bone.png',
+        altText: 'Boné preto de aba curva com um logo circular bordado em branco na frente.'
+      },
+      {
+        id: 'garrafa',
+        nome: 'Garrafa Térmica',
+        imgSrc: 'imagens/garrafa.png',
+        altText: 'Garrafa térmica de aço inoxidável prateada com tampa de rosca preta.'
+      }
+    ];
     const carrinho = {};
+
+    function toggleCarrinho(button) {
+      const isExpanded = button.getAttribute('aria-expanded') === 'true';
+      const panel = document.getElementById('painelCarrinho');
+      button.setAttribute('aria-expanded', !isExpanded);
+      if (panel) { panel.hidden = isExpanded; }
+    }
+
+    function renderizarProdutos() {
+        const container = document.getElementById('lista-produtos');
+        container.innerHTML = '';
+        produtos.forEach(produto => {
+            const produtoDiv = document.createElement('div');
+            produtoDiv.className = 'produto';
+            produtoDiv.innerHTML = `
+                <div class="produto-info">
+                    <img src="${produto.imgSrc}" alt="${produto.altText}" class="produto-imagem">
+                    <span>${produto.nome}</span>
+                </div>
+                <button class="btn" aria-label="Adicionar ${produto.nome} ao carrinho" onclick="adicionar('${produto.id}')">🛒 Adicionar</button>
+            `;
+            container.appendChild(produtoDiv);
+        });
+    }
 
     function atualizarCarrinho() {
       const container = document.getElementById("itensCarrinho");
-      const status = document.getElementById("status");
       container.innerHTML = "";
-
-      const nomes = Object.keys(carrinho);
-      if (nomes.length === 0) {
-        container.textContent = "Nenhum item no carrinho.";
+      const idsNoCarrinho = Object.keys(carrinho);
+      if (idsNoCarrinho.length === 0) {
+        container.innerHTML = "<li>Nenhum item no carrinho.</li>";
         return;
       }
+      idsNoCarrinho.forEach((produtoId) => {
+        const produto = produtos.find(p => p.id === produtoId);
+        if (!produto) return; 
 
-      nomes.forEach((produto) => {
-        const item = document.createElement("div");
+        const item = document.createElement("li");
         item.className = "item-carrinho";
         item.innerHTML = `
-          <span>${produto} (${carrinho[produto]})</span>
+          <div class="item-carrinho-info">
+            <img src="${produto.imgSrc}" alt="${produto.altText}" class="item-carrinho-imagem">
+            <span>${produto.nome} (${carrinho[produtoId]})</span>
+          </div>
           <span>
-            <button class="btn btn-remove" aria-label="Remover ${produto} do carrinho" onclick="remover('${produto}')">Remover</button>
+            <button class="btn btn-remove" aria-label="Remover ${produto.nome} do carrinho" onclick="remover('${produto.id}')">Remover</button>
           </span>
         `;
         container.appendChild(item);
       });
     }
 
-    function adicionar(produto) {
-      carrinho[produto] = (carrinho[produto] || 0) + 1;
+    function adicionar(produtoId) {
+      carrinho[produtoId] = (carrinho[produtoId] || 0) + 1;
+      const produto = produtos.find(p => p.id === produtoId);
       atualizarCarrinho();
-      const status = document.getElementById("status");
-      status.textContent = `${produto} adicionado ao carrinho.`;
+      document.getElementById("status").textContent = `${produto.nome} adicionado ao carrinho.`;
+      
+      const toggleButton = document.querySelector('.titulo-expansivel');
+      if (toggleButton && toggleButton.getAttribute('aria-expanded') === 'false') {
+        toggleButton.click();
+      }
     }
 
-    function remover(produto) {
-          if (carrinho[produto]) {
-            carrinho[produto]--;
-            if (carrinho[produto] === 0) delete carrinho[produto];
-            
-            atualizarCarrinho(); 
-            
-            const status = document.getElementById("status");
-            status.textContent = `${produto} removido do carrinho.`;
-
+    function remover(produtoId) {
+      if (carrinho[produtoId]) {
+        carrinho[produtoId]--;
+        if (carrinho[produtoId] === 0) delete carrinho[produtoId];
         
-            const carrinhoTitle = document.querySelector('.carrinho h2');
-            carrinhoTitle.setAttribute('tabindex', '-1'); 
-            carrinhoTitle.focus();
-            // -------------------------
-  }
-}
+        const produto = produtos.find(p => p.id === produtoId);
+        atualizarCarrinho();
+        document.getElementById("status").textContent = `${produto.nome} removido do carrinho.`;
+        
+        const tituloCarrinho = document.querySelector('.titulo-expansivel h2');
+        if (tituloCarrinho) {
+            tituloCarrinho.setAttribute('tabindex', '-1');
+            tituloCarrinho.focus();
+        }
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', renderizarProdutos);
   </script>
 
 </body>
